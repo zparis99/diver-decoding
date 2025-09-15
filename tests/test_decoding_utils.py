@@ -371,24 +371,29 @@ class TestComputeWordEmbeddingTaskMetrics:
         # Create a model that returns exact word embeddings
         class PerfectModel:
             def __init__(self):
-                self.call_count = 0
+                pass
 
             def eval(self):
                 return self
 
             def __call__(self, x):
-                # The get_predictions function calls this once per sample
-                # Return the appropriate prediction for each call
-                if self.call_count == 0:
-                    result = torch.tensor(
+                # The get_predictions function passes batched input
+                # Return predictions for all samples in the batch
+                batch_size = x.shape[0]
+                if batch_size == 1:
+                    # Single sample prediction
+                    return torch.tensor(
                         [[1.0, 0.0, 0.0, 0.0]], dtype=torch.float32
                     )  # word 0
                 else:
-                    result = torch.tensor(
-                        [[0.0, 1.0, 0.0, 0.0]], dtype=torch.float32
-                    )  # word 1
-                self.call_count += 1
-                return result
+                    # Multiple samples - return perfect predictions for each
+                    return torch.tensor(
+                        [
+                            [1.0, 0.0, 0.0, 0.0],  # word 0 for first sample
+                            [0.0, 1.0, 0.0, 0.0],  # word 1 for second sample
+                        ],
+                        dtype=torch.float32
+                    )
 
         # Test data
         X_test = torch.randn(2, 5)
